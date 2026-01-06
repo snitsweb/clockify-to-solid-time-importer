@@ -1,0 +1,23 @@
+{
+  "name": "clockify-to-solid-time",
+  "version": "1.0.0",
+  "description": "Bun script to import time entries from Clockify to Solid Time",
+  "main": "script.js",
+  "scripts": {
+    "start": "bun run script.js",
+    "import": "bun run script.js"
+  },
+  "keywords": [
+    "clockify",
+    "solid-time",
+    "time-tracking",
+    "import"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
+
