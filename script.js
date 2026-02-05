@@ -30,14 +30,22 @@ function getPreviousDayDateRange() {
   previousDay.setUTCHours(0, 0, 0, 0);
 
   const endOfPreviousDay = new Date(previousDay);
-  endOfPreviousDay.setUTCHours(23, 59, 59, 0);
+  endOfPreviousDay.setUTCHours(23, 59, 59, 999);
+
+  const startOfCurrentDay = new Date(now);
+  startOfCurrentDay.setUTCHours(0, 0, 0, 0);
+  
+  const endOfCurrentDay = new Date(startOfCurrentDay);
+  endOfCurrentDay.setUTCHours(23, 59, 59, 999);
 
   const startISO = previousDay.toISOString().replace(/\.\d{3}Z$/, 'Z');
   const endISO = endOfPreviousDay.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const queryEndISO = endOfCurrentDay.toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   return {
     start: startISO,
     end: endISO,
+    queryEnd: queryEndISO,
   };
 }
 
@@ -59,16 +67,42 @@ async function runImport() {
       `[${new Date().toISOString()}] Importing entries from: ${previousDayStr}`
     );
 
-    const clockifyEntries = await clockify.fetchTimeEntriesByProject(
+    const allEntries = await clockify.fetchTimeEntriesByProject(
       clockifyApiKey,
       workspaceId,
       projectId,
       dateRange.start,
-      dateRange.end
+      dateRange.queryEnd
     );
 
+    const rangeStart = new Date(dateRange.start);
+    const rangeEnd = new Date(dateRange.end);
+    
     console.log(
-      `[${new Date().toISOString()}] Found ${clockifyEntries.length} time entries`
+      `[${new Date().toISOString()}] Filtering entries for range: ${rangeStart.toISOString()} to ${rangeEnd.toISOString()}`
+    );
+
+    const clockifyEntries = allEntries.filter((entry) => {
+      if (!entry.timeInterval?.start) return false;
+      
+      const entryStart = new Date(entry.timeInterval.start);
+      const entryEnd = entry.timeInterval.end 
+        ? new Date(entry.timeInterval.end)
+        : new Date();
+
+      const overlaps = entryStart <= rangeEnd && entryEnd >= rangeStart;
+      
+      if (!overlaps) {
+        console.log(
+          `[${new Date().toISOString()}] Entry excluded: ${entry.description || 'No description'} (${entryStart.toISOString()} to ${entryEnd.toISOString()})`
+        );
+      }
+
+      return overlaps;
+    });
+
+    console.log(
+      `[${new Date().toISOString()}] Found ${allEntries.length} time entries (${clockifyEntries.length} overlapping ${previousDayStr})`
     );
 
     if (clockifyEntries.length === 0) {
