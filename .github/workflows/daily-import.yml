@@ -2,7 +2,7 @@ name: Daily Import
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 6 * * *'  # 6 AM UTC (7 AM Warsaw time in winter, 8 AM in summer)
   workflow_dispatch:
 
 jobs:
